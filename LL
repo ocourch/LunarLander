@@ -1,0 +1,177 @@
+(define (update ship-state fuel-burn-rate)
+  (make-ship-state
+   (+ (height ship-state) (* (velocity ship-state) dt)) ; height
+   (+ (velocity ship-state)
+      (* (- (* engine-strength fuel-burn-rate) gravity)
+         dt))                                           ; velocity
+   (- (fuel ship-state) (* fuel-burn-rate dt))))        ; fuel
+  
+(define (lander-loop ship-state)
+  (show-ship-state ship-state)
+  (if (landed? ship-state)
+      (end-game ship-state)
+      (lander-loop (update ship-state (get-burn-rate)))))
+
+(define (show-ship-state ship-state)
+  (write-line 
+    (list 'height (height ship-state)
+          'velocity (velocity ship-state)
+          'fuel (fuel ship-state))))
+
+(define (landed? ship-state)
+  (<= (height ship-state) 0))
+
+(define (end-game ship-state)
+  (let ((final-velocity (velocity ship-state)))
+       (write-line final-velocity)
+       (cond ((>= final-velocity safe-velocity)
+               (write-line "good landing")
+               'game-over)
+             (else
+               (write-line "you crashed!")
+               'game-over))))
+
+(define (get-burn-rate)
+  (if (= (player-input) burn-key)
+      1
+      0))
+
+(define (play) (lander-loop (initial-ship-state)))
+
+(define (initial-ship-state)
+  (make-ship-state 50       ; 50 km high
+                   0        ; not moving (0 km/sec)
+                   20))     ; 20 kg of fuel left
+
+(define dt 1)               ; 1 second interval of simulation
+  
+(define gravity 0.5)        ; 0.5 km/sec/sec
+  
+(define safe-velocity -0.5) ; 0.5 km/sec or faster is a crash
+
+(define engine-strength 1)  ; 1 kilonewton-second
+
+(define (player-input) 
+  (char->integer (prompt-for-command-char " action: "))) 
+
+(define burn-key 32)   ;space key
+
+; You'll learn about the stuff below here in Chapter 2.
+; For now, think of make-ship-state, height, velocity, and fuel
+; as primitive procedures built in to Scheme.
+
+(define (make-ship-state height velocity fuel)
+  (list 'HEIGHT   height
+        'VELOCITY velocity
+        'FUEL     fuel))
+
+(define (height state) (second state))
+(define (velocity state) (fourth state))
+(define (fuel state) (sixth state))
+
+(define (second l) (cadr l))
+(define (fourth l) (cadr (cddr l)))
+(define (sixth l) (cadr (cddr (cddr l))))
+
+
+(define (write-line x)
+  (display x)
+  (newline))
+
+(define (get-one-key)
+  (let ((x (read-char)))
+    (if (eq? x #\newline)
+        x
+        (empty-buffer x))))
+
+(define (empty-buffer x)
+  (if (eq? (read-char) #\newline)
+      x
+      (empty-buffer x)))
+
+(define (prompt-for-command-char prompt)
+  (display prompt)
+  (get-one-key)) 
+
+; for random number generation
+
+(#%require (only racket/base random))
+
+;======MY CODE IS BELOW=======
+
+; Author: Oscar Courchaine
+
+(#%require (only racket/base random))
+
+(define (update ship-state fuel-burn-rate)
+  (if (< 1 fuel-burn-rate) (= fuel-burn-rate 1))  
+  (cond(( > 0(- (fuel ship-state) (* fuel-burn-rate dt)))  ;checks to see if user tries to use fuel when none is available, if so, supplies alternate make-ship-state 
+  
+   (make-ship-state                                                                                                 
+   (+ (height ship-state) (* (velocity ship-state) dt)) ; height (free-fall)
+   (+ (velocity ship-state)
+      (* (- (* engine-strength 0) gravity)
+         dt))                                           ; velocity (free-fall)
+   (- (fuel ship-state) (* 0 dt))))                     ; fuel (free-fall)
+
+   (else(make-ship-state
+   (+ (height ship-state) (* (velocity ship-state) dt)) ; height
+   (+ (velocity ship-state)
+      (* (- (* engine-strength fuel-burn-rate) gravity)
+         dt))                                           ; velocity
+   (- (fuel ship-state) (* fuel-burn-rate dt))))))      ; fuel
+  
+(define (lander-loop  fn ship-state)
+  (show-ship-state ship-state)
+  (if (landed? ship-state)
+      (end-game ship-state)
+      (lander-loop fn (update ship-state(fn ship-state)))))
+
+(define (play fn) (lander-loop fn (initial-ship-state)))
+
+(define (full-burn ship-state) 1)
+
+(define (no-burn ship-state) 0)
+
+(define (ask-user ship-state) (get-burn-rate))
+
+(define (random-choice x y)
+    (lambda (ship-state)
+      (if(= (random 2) 0)
+         (x ship-state)
+         (y ship-state))))
+
+(define (height-choice x y z) ;Original height-choice
+  (lambda (ship-state)
+      (if(> z (height ship-state))
+         (x ship-state)
+         (y ship-state))))
+
+(define (choice x y pred)
+  (lambda (ship-state)
+  (if (eqv? #t (pred ship-state)) (x ship-state) (y ship-state))))
+         
+(define (height-choice x y z) ;height-choice using 'choice'
+  (choice  x
+           y
+          (lambda(ship-state)(> z (height ship-state)))))
+
+(define (prob6)   ;special strategy 
+  (lambda (ship-state)
+      (if(< 40 (height ship-state)) ;free falls until height<40
+         (no-burn ship-state)
+         (if(= (random 2) 0)        ;randomly either asks user or does a full burn
+           (full-burn ship-state)
+           (ask-user ship-state)))))
+
+(define (constant-acc ship-state)    ; for constant acceleration
+  (/(* (velocity ship-state) (velocity ship-state)) (* 2 (height ship-state))))
+
+(define (optimal-constant-acc ship-state) ; for constant acceleration with maximun fuel retention
+  (if ( > .9 (/(* (velocity ship-state) (velocity ship-state)) (* 2 (height ship-state))))
+       (no-burn ship-state)
+       (/(* (velocity ship-state) (velocity ship-state)) (* 2 (height ship-state)))))
+
+
+(define dt .1)               ;  interval of simulation
+  
